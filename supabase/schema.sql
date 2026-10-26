@@ -26,10 +26,10 @@ create type public.skill_level as enum ('principiante', 'intermedio', 'avanzado'
 
 create table public.profiles (
   id uuid primary key references auth.users on delete cascade,
-  full_name text not null default '',
+  full_name text not null default '' check (char_length(full_name) <= 100),
   avatar_url text,
-  bio text,
-  neighborhood text,
+  bio text check (char_length(bio) <= 500),
+  neighborhood text check (char_length(neighborhood) <= 100),
   created_at timestamptz not null default now()
 );
 
@@ -52,11 +52,6 @@ end $$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
-
--- Perfiles para las cuentas que ya existían en el proyecto antes de JuegaBGA.
-insert into public.profiles (id, full_name)
-select id, coalesce(raw_user_meta_data->>'full_name', '') from auth.users
-on conflict (id) do nothing;
 
 ------------------------------------------------------------
 -- Canchas de Bucaramanga (se cargan desde el panel de Supabase)
@@ -91,7 +86,7 @@ create table public.matches (
   -- Lo que paga cada jugador por la cancha, en pesos colombianos. 0 = gratis.
   price_per_player int not null default 0 check (price_per_player >= 0),
   level public.skill_level,
-  notes text,
+  notes text check (char_length(notes) <= 500),
   status public.match_status not null default 'abierto',
   created_at timestamptz not null default now()
 );
@@ -125,7 +120,7 @@ create table public.messages (
   id uuid primary key default gen_random_uuid(),
   conversation_id uuid not null references public.conversations on delete cascade,
   sender_id uuid not null references public.profiles on delete cascade,
-  body text,
+  body text check (char_length(body) <= 2000),
   image_path text,
   created_at timestamptz not null default now(),
   check (body is not null or image_path is not null)
@@ -162,6 +157,8 @@ declare
   needed int;
 begin
   if new.status = 'aceptado' and (tg_op = 'INSERT' or old.status <> 'aceptado') then
+    -- Bloquea el partido para que dos aceptaciones simultáneas no pasen el cupo.
+    perform 1 from matches where id = new.match_id for update;
     select count(*) - 1 into filled
     from match_members where match_id = new.match_id and status = 'aceptado';
     select players_needed into needed from matches where id = new.match_id;
@@ -252,6 +249,13 @@ begin
   return conv;
 end $$;
 
+-- Elimina la cuenta de quien llama y, en cascada, sus datos (Ley 1581 de 2012:
+-- derecho de supresión; también lo exigen Apple y Google).
+create function public.delete_my_account() returns void
+language sql security definer set search_path = public, auth as $$
+  delete from auth.users where id = auth.uid();
+$$;
+
 ------------------------------------------------------------
 -- Comunidad: muro por deporte
 ------------------------------------------------------------
@@ -259,7 +263,7 @@ create table public.posts (
   id uuid primary key default gen_random_uuid(),
   author_id uuid not null references public.profiles on delete cascade,
   sport_id text references public.sports,
-  body text not null,
+  body text not null check (char_length(body) between 1 and 2000),
   image_path text,
   created_at timestamptz not null default now()
 );
@@ -281,6 +285,8 @@ grant select, insert, delete on public.posts to authenticated;
 
 revoke execute on function public.start_direct_chat(uuid) from public, anon;
 grant execute on function public.start_direct_chat(uuid) to authenticated;
+revoke execute on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;
 revoke execute on function public.is_conversation_member(uuid) from public, anon;
 grant execute on function public.is_conversation_member(uuid) to authenticated;
 
@@ -319,7 +325,7 @@ create policy "partidos visibles" on public.matches
 create policy "crear partido" on public.matches
   for insert to authenticated with check (creator_id = auth.uid());
 create policy "editar mi partido" on public.matches
-  for update to authenticated using (creator_id = auth.uid());
+  for update to authenticated using (creator_id = auth.uid()) with check (creator_id = auth.uid());
 
 create policy "participantes visibles" on public.match_members
   for select to authenticated using (true);
@@ -366,9 +372,9 @@ create policy "borrar mi publicación" on public.posts
 --   chat-images (privado): ruta "<conversation_id>/<archivo>"
 --   post-images (público): ruta "<user_id>/<archivo>"
 ------------------------------------------------------------
-insert into storage.buckets (id, name, public) values
-  ('chat-images', 'chat-images', false),
-  ('post-images', 'post-images', true);
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types) values
+  ('chat-images', 'chat-images', false, 5242880, array['image/jpeg', 'image/png', 'image/webp']),
+  ('post-images', 'post-images', true, 5242880, array['image/jpeg', 'image/png', 'image/webp']);
 
 create policy "ver imágenes de mis chats" on storage.objects
   for select to authenticated using (

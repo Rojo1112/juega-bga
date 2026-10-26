@@ -1,0 +1,5 @@
+-- Canchas de Bucaramanga y área metropolitana.
+-- Completar SOLO con datos verificados (Google Maps / EasyCancha). Ejecutar en el SQL Editor de Supabase.
+-- sport_ids debe usar los ids de la tabla public.sports.
+-- insert into public.venues (name, address, neighborhood, city, sport_ids, easycancha_url) values
+--   ('Nombre del club', 'Dirección', 'Barrio', 'Bucaramanga', '{padel}', 'https://www.easycancha.com/...');
