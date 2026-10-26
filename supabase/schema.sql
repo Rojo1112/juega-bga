@@ -261,6 +261,25 @@ create table public.posts (
 create index on public.posts (sport_id, created_at desc);
 
 ------------------------------------------------------------
+-- Permisos: los proyectos nuevos de Supabase no dan acceso automático a
+-- las tablas. Solo los usuarios con sesión usan la app; RLS decide qué filas.
+------------------------------------------------------------
+grant usage on schema public to authenticated;
+grant select on public.sports, public.venues to authenticated;
+grant select, update on public.profiles to authenticated;
+grant select, insert, update, delete on public.user_sports to authenticated;
+grant select, insert, update on public.matches to authenticated;
+grant select, insert, update, delete on public.match_members to authenticated;
+grant select on public.conversations, public.conversation_members to authenticated;
+grant select, insert on public.messages to authenticated;
+grant select, insert, delete on public.posts to authenticated;
+
+revoke execute on function public.start_direct_chat(uuid) from public, anon;
+grant execute on function public.start_direct_chat(uuid) to authenticated;
+revoke execute on function public.is_conversation_member(uuid) from public, anon;
+grant execute on function public.is_conversation_member(uuid) to authenticated;
+
+------------------------------------------------------------
 -- Seguridad por filas (RLS)
 ------------------------------------------------------------
 alter table public.sports enable row level security;
