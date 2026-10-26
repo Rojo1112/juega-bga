@@ -35,7 +35,12 @@ export default function LoginScreen() {
         options: { data: { full_name: name.trim() } },
       });
       if (error) setError(translateAuthError(error.message));
-      else if (!data.session) setNotice('Te enviamos un correo para confirmar tu cuenta. Ábrelo y luego ingresa.');
+      // Con confirmación de correo activa, Supabase no da error si el correo ya existe:
+      // devuelve un usuario sin identidades.
+      else if (data.user?.identities?.length === 0) {
+        setError('Ya existe una cuenta con ese correo. Usa "Ingresar" con tu contraseña.');
+        setMode('ingresar');
+      } else if (!data.session) setNotice('Te enviamos un correo para confirmar tu cuenta. Ábrelo y luego ingresa.');
     }
     setLoading(false);
   }
