@@ -26,6 +26,48 @@ export type Venue = {
   neighborhood: string | null;
   sport_ids: SportId[];
   easycancha_url: string | null;
+  owner_id: string | null;
+  phone: string | null;
+  approved: boolean;
+};
+
+export type Court = {
+  id: string;
+  venue_id: string;
+  name: string;
+  sport_id: SportId;
+  price_per_slot: number;
+  slot_minutes: number;
+  active: boolean;
+};
+
+export type CourtHours = {
+  court_id: string;
+  weekday: number;
+  /** Llegan como 'HH:MM:SS'. */
+  opens: string;
+  closes: string;
+};
+
+export type Booking = {
+  id: string;
+  court_id: string;
+  user_id: string;
+  starts_at: string;
+  ends_at: string;
+  price: number;
+  status: 'confirmada' | 'cancelada';
+  paid_at: string | null;
+};
+
+export type AdPlacement = 'inicio' | 'canchas' | 'comunidad';
+
+export type Ad = {
+  id: string;
+  title: string;
+  image_url: string;
+  link_url: string | null;
+  placement: AdPlacement;
 };
 
 export type Match = {
