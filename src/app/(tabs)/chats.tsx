@@ -57,7 +57,7 @@ export default function ChatsScreen() {
         conversations.map((conversation) => {
           const title = conversationTitle(conversation, userId);
           const last = conversation.messages[0];
-          const preview = last ? (last.body ?? '📷 Foto') : 'Sin mensajes todavía';
+          const preview = last ? (last.body ?? 'Foto') : 'Sin mensajes todavía';
           return (
             <Pressable
               key={conversation.id}

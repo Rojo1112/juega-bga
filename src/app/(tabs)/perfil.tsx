@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { SportMark } from '@/components/court';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, Button, Chip, ChipRow, ErrorText, Loading, Screen, Section, TextField } from '@/components/ui';
 import { LEVELS, SPORTS } from '@/constants/sports';
@@ -126,9 +127,10 @@ export default function ProfileScreen() {
       <Section title="Mis deportes y nivel">
         {SPORTS.map((sport) => (
           <View key={sport.id} style={styles.sport}>
-            <ThemedText type="smallBold">
-              {sport.emoji} {sport.name}
-            </ThemedText>
+            <View style={styles.sportName}>
+              <SportMark sport={sport.id} />
+              <ThemedText type="smallBold">{sport.name}</ThemedText>
+            </View>
             <ChipRow>
               <Chip label="No juego" selected={!levels[sport.id]} onPress={() => setLevel(sport.id, null)} />
               {LEVELS.map((level) => (
@@ -184,5 +186,10 @@ const styles = StyleSheet.create({
   sport: {
     gap: Spacing.one,
     marginBottom: Spacing.two,
+  },
+  sportName: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
   },
 });

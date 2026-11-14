@@ -9,7 +9,7 @@ import { AdBanner } from '@/components/ad-banner';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, Button, Card, Chip, ChipRow, EmptyState, ErrorText, Screen, TextField } from '@/components/ui';
 import { SPORTS, sportById } from '@/constants/sports';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius, SportColors, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatRelative } from '@/lib/format';
 import { pickImage, publicImageUrl, uploadImage } from '@/lib/images';
@@ -112,7 +112,8 @@ export default function CommunityScreen() {
         {SPORTS.map((item) => (
           <Chip
             key={item.id}
-            label={`${item.emoji} ${item.name}`}
+            label={item.name}
+            color={SportColors[item.id]}
             selected={sport === item.id}
             onPress={() => chooseSport(item.id)}
           />
@@ -160,7 +161,7 @@ export default function CommunityScreen() {
                   <ThemedText type="smallBold">{name}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
                     {formatRelative(post.created_at)}
-                    {postSport ? ` · ${postSport.emoji} ${postSport.name}` : ''}
+                    {postSport ? ` · ${postSport.name}` : ''}
                   </ThemedText>
                 </View>
               </Pressable>

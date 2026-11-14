@@ -122,7 +122,7 @@ export default function MatchScreen() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: sport ? `${sport.emoji} ${sport.name}` : 'Partido' }} />
+      <Stack.Screen options={{ title: sport ? sport.name : 'Partido' }} />
 
       <Card>
         <Court sport={match.sport_id} animate width={courtWidth} muted={cancelled} />

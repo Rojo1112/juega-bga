@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { Button, ChipRow, Chip, ErrorText, Section, TextField } from '@/components/ui';
 import { SPORTS } from '@/constants/sports';
+import { SportColors } from '@/constants/theme';
 import type { SportId, Venue } from '@/lib/types';
 
 export type VenueValues = {
@@ -84,7 +85,8 @@ export function VenueForm({
           {SPORTS.map((sport) => (
             <Chip
               key={sport.id}
-              label={`${sport.emoji} ${sport.name}`}
+              label={sport.name}
+              color={SportColors[sport.id]}
               selected={sports.includes(sport.id)}
               onPress={() => toggleSport(sport.id)}
             />

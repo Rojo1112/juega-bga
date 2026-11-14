@@ -1,13 +1,13 @@
 import type { SkillLevel, SportId } from '@/lib/types';
 
 // Debe coincidir con los deportes que inserta supabase/schema.sql.
-export const SPORTS: { id: SportId; name: string; emoji: string; defaultPlayers: number }[] = [
-  { id: 'futbol', name: 'Fútbol', emoji: '⚽', defaultPlayers: 10 },
-  { id: 'padel', name: 'Pádel', emoji: '🎾', defaultPlayers: 4 },
-  { id: 'pickleball', name: 'Pickleball', emoji: '🏓', defaultPlayers: 4 },
-  { id: 'tenis', name: 'Tenis', emoji: '🎾', defaultPlayers: 2 },
-  { id: 'baloncesto', name: 'Baloncesto', emoji: '🏀', defaultPlayers: 10 },
-  { id: 'voleibol', name: 'Voleibol', emoji: '🏐', defaultPlayers: 12 },
+export const SPORTS: { id: SportId; name: string; defaultPlayers: number }[] = [
+  { id: 'futbol', name: 'Fútbol', defaultPlayers: 10 },
+  { id: 'padel', name: 'Pádel', defaultPlayers: 4 },
+  { id: 'pickleball', name: 'Pickleball', defaultPlayers: 4 },
+  { id: 'tenis', name: 'Tenis', defaultPlayers: 2 },
+  { id: 'baloncesto', name: 'Baloncesto', defaultPlayers: 10 },
+  { id: 'voleibol', name: 'Voleibol', defaultPlayers: 12 },
 ];
 
 export function sportById(id: SportId | null | undefined) {

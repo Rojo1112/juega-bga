@@ -1,11 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useState, type ComponentProps, type PropsWithChildren, type ReactNode } from 'react';
+import { Children, useState, type ComponentProps, type PropsWithChildren, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
+  useWindowDimensions,
   View,
   type StyleProp,
   type TextInputProps,
@@ -14,7 +15,7 @@ import {
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
-import { Fonts, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Fonts, MaxContentWidth, MaxWideContentWidth, Radius, Spacing } from '@/constants/theme';
 import { initials } from '@/lib/format';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -57,10 +58,13 @@ function usePressScale() {
 export function Screen({
   children,
   scroll = true,
+  wide = false,
   contentStyle,
-}: PropsWithChildren<{ scroll?: boolean; contentStyle?: StyleProp<ViewStyle> }>) {
+}: PropsWithChildren<{ scroll?: boolean; wide?: boolean; contentStyle?: StyleProp<ViewStyle> }>) {
   const theme = useTheme();
-  const inner = <View style={[styles.screenContent, contentStyle]}>{children}</View>;
+  const inner = (
+    <View style={[styles.screenContent, wide && styles.wideContent, contentStyle]}>{children}</View>
+  );
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       {scroll ? (
@@ -219,7 +223,11 @@ export function Checkbox({ label, checked, onPress }: { label: string; checked: 
 /** Fila de chips con desplazamiento horizontal. */
 export function ChipRow({ children }: PropsWithChildren) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.chipScroll}
+      contentContainerStyle={styles.chipRow}>
       {children}
     </ScrollView>
   );
@@ -272,6 +280,35 @@ export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
       <ThemedText style={{ fontFamily: Fonts.display, fontSize, lineHeight: Math.round(fontSize * 1.4) }}>
         {initials(name)}
       </ThemedText>
+    </View>
+  );
+}
+
+/** Columnas de una rejilla de tarjetas según el ancho de la ventana. */
+export function useGridColumns() {
+  const { width } = useWindowDimensions();
+  return width >= 1200 ? 3 : width >= 700 ? 2 : 1;
+}
+
+/** Tarjetas en filas de `columns`. Las celdas vacías de la última fila conservan el mismo ancho. */
+export function CardGrid({ columns, children }: PropsWithChildren<{ columns: number }>) {
+  const items = Children.toArray(children);
+  const rows: ReactNode[][] = [];
+  for (let i = 0; i < items.length; i += columns) rows.push(items.slice(i, i + columns));
+  return (
+    <View style={styles.grid}>
+      {rows.map((row, rowIndex) => (
+        <View key={rowIndex} style={styles.gridRow}>
+          {row.map((item, cell) => (
+            <View key={cell} style={styles.gridCell}>
+              {item}
+            </View>
+          ))}
+          {Array.from({ length: columns - row.length }, (_, cell) => (
+            <View key={`empty-${cell}`} style={styles.gridCell} />
+          ))}
+        </View>
+      ))}
     </View>
   );
 }
@@ -339,6 +376,20 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     gap: Spacing.three,
   },
+  wideContent: {
+    maxWidth: MaxWideContentWidth,
+  },
+  grid: {
+    gap: Spacing.three,
+  },
+  gridRow: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+  },
+  gridCell: {
+    flex: 1,
+    minWidth: 0,
+  },
   button: {
     minHeight: 52,
     borderRadius: Radius.medium,
@@ -373,6 +424,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+  },
+  chipScroll: {
+    flexGrow: 0,
   },
   chipRow: {
     gap: Spacing.two,

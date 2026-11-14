@@ -5,7 +5,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { AdBanner } from '@/components/ad-banner';
 import { Court } from '@/components/court';
 import { ThemedText } from '@/components/themed-text';
-import { Button, Card, Chip, ChipRow, EmptyState, ErrorText, Screen } from '@/components/ui';
+import { Button, Card, CardGrid, Chip, ChipRow, EmptyState, ErrorText, Screen, useGridColumns } from '@/components/ui';
 import { SPORTS, sportById } from '@/constants/sports';
 import { SportColors, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -17,6 +17,7 @@ type CourtListRow = CourtRow & { venue: Venue | null };
 
 export default function CourtsScreen() {
   const theme = useTheme();
+  const columns = useGridColumns();
   const [sport, setSport] = useState<SportId | null>(null);
   const [courts, setCourts] = useState<CourtListRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export default function CourtsScreen() {
   );
 
   return (
-    <Screen>
+    <Screen wide>
       <AdBanner placement="canchas" />
       <Button title="Mis reservas" icon="calendar-outline" variant="secondary" onPress={() => router.push('/reservas')} />
       <ChipRow>
@@ -62,7 +63,11 @@ export default function CourtsScreen() {
       ) : courts.length === 0 ? (
         <EmptyState icon="tennisball-outline" title="Todavía no hay canchas para reservar" />
       ) : (
-        courts.map((court) => <CourtCard key={court.id} court={court} />)
+        <CardGrid columns={columns}>
+          {courts.map((court) => (
+            <CourtCard key={court.id} court={court} />
+          ))}
+        </CardGrid>
       )}
     </Screen>
   );
