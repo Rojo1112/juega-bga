@@ -345,6 +345,10 @@ create trigger before_message_insert
 -- Permisos: los proyectos nuevos de Supabase no dan acceso automático a
 -- las tablas. Solo los usuarios con sesión usan la app; RLS decide qué filas.
 ------------------------------------------------------------
+-- Supabase concede por defecto todos los permisos a anon y authenticated sobre las tablas
+-- de public. Se quitan aquí y abajo se da solo lo necesario, columna por columna donde importa.
+revoke all on all tables in schema public from anon, authenticated;
+alter default privileges in schema public revoke all on tables from anon, authenticated;
 grant usage on schema public to authenticated;
 grant select on public.sports, public.venues to authenticated;
 -- Solo se editan los datos visibles del perfil; el registro del consentimiento lo escribe el trigger.
