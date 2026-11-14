@@ -2,6 +2,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { SportMark } from '@/components/court';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, Button, Card, EmptyState, ErrorText, Loading, Screen, Section, TextField } from '@/components/ui';
 import { levelName, sportById } from '@/constants/sports';
@@ -111,9 +112,12 @@ export default function PlayerScreen() {
             const sport = sportById(row.sport_id);
             return (
               <Card key={row.sport_id}>
-                <ThemedText type="smallBold">
-                  {sport?.emoji} {sport?.name} · {levelName(row.level)}
-                </ThemedText>
+                <View style={styles.sportRow}>
+                  <SportMark sport={row.sport_id} />
+                  <ThemedText type="smallBold">
+                    {sport?.name} · {levelName(row.level)}
+                  </ThemedText>
+                </View>
               </Card>
             );
           })
@@ -158,5 +162,10 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     lineHeight: 30,
+  },
+  sportRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
   },
 });

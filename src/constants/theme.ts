@@ -56,3 +56,5 @@ export const Radius = {
 } as const;
 
 export const MaxContentWidth = 720;
+/** Ancho máximo de las pantallas con rejilla de tarjetas (partidos y canchas). */
+export const MaxWideContentWidth = 1200;

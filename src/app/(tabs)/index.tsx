@@ -5,7 +5,7 @@ import { ActivityIndicator } from 'react-native';
 import { AdBanner } from '@/components/ad-banner';
 import { MatchCard } from '@/components/match-card';
 import { ThemedText } from '@/components/themed-text';
-import { Button, Chip, ChipRow, EmptyState, ErrorText, Screen } from '@/components/ui';
+import { Button, CardGrid, Chip, ChipRow, EmptyState, ErrorText, Screen, useGridColumns } from '@/components/ui';
 import { SPORTS } from '@/constants/sports';
 import { SportColors } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -15,6 +15,7 @@ import type { SportId } from '@/lib/types';
 
 export default function MatchesScreen() {
   const theme = useTheme();
+  const columns = useGridColumns();
   const [sport, setSport] = useState<SportId | null>(null);
   const [matches, setMatches] = useState<MatchListRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +44,7 @@ export default function MatchesScreen() {
   );
 
   return (
-    <Screen>
+    <Screen wide>
       <AdBanner placement="inicio" />
       <ThemedText themeColor="textSecondary">Partidos próximos en Bucaramanga</ThemedText>
       <ChipRow>
@@ -71,7 +72,11 @@ export default function MatchesScreen() {
           message="Arma uno y la gente de tu ciudad podrá unirse."
         />
       ) : (
-        matches.map((match) => <MatchCard key={match.id} match={match} />)
+        <CardGrid columns={columns}>
+          {matches.map((match) => (
+            <MatchCard key={match.id} match={match} />
+          ))}
+        </CardGrid>
       )}
     </Screen>
   );

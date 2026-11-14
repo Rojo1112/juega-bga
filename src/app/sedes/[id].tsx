@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { VenueForm, type VenueValues } from '@/components/venue-form';
 import { Button, Card, Checkbox, Chip, ChipRow, EmptyState, ErrorText, Loading, Screen, Section, TextField } from '@/components/ui';
 import { SPORTS, sportById } from '@/constants/sports';
+import { SportColors } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { BOGOTA_TZ } from '@/lib/bookings';
 import { formatMatchDay, formatPesos, formatTime } from '@/lib/format';
@@ -266,7 +267,8 @@ function NewCourtForm({ venueId, sports, onSaved }: { venueId: string; sports: S
           {SPORTS.filter((item) => sports.includes(item.id)).map((item) => (
             <Chip
               key={item.id}
-              label={`${item.emoji} ${item.name}`}
+              label={item.name}
+              color={SportColors[item.id]}
               selected={sport === item.id}
               onPress={() => setSport(item.id)}
             />

@@ -347,7 +347,20 @@ export function Roster({ sport, total, filled }: RosterProps) {
   );
 }
 
+/** Marca del deporte: su mini cancha centrada en una franja de alto `size`. */
+export function SportMark({ sport, size = 18 }: { sport: SportId; size?: number }) {
+  return (
+    <View style={[styles.mark, { height: size }]}>
+      <Court sport={sport} width={Math.round(size * 1.8)} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  mark: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   court: {
     overflow: 'hidden',
     borderRadius: 3,
