@@ -126,6 +126,7 @@ function translateAuthError(message: string) {
   if (message.includes('Email not confirmed')) return 'Primero confirma tu correo con el enlace que te enviamos.';
   if (message.includes('User already registered')) return 'Ya existe una cuenta con ese correo.';
   if (message.includes('Database error saving new user')) return 'Debes aceptar los términos y ser mayor de 18 años.';
+  if (message.includes('rate limit')) return 'Se enviaron demasiados correos en poco tiempo. Espera una hora e inténtalo de nuevo.';
   if (message.includes('Password should be')) return 'La contraseña debe tener al menos 6 caracteres.';
   return message;
 }
