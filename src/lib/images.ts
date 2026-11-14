@@ -33,6 +33,18 @@ export async function removeMyPostImages(userId: string) {
   if (paths.length) await supabase.storage.from('post-images').remove(paths);
 }
 
+/** Borra las fotos de chat que la persona envió (al eliminar su cuenta). */
+export async function removeMyChatImages(userId: string) {
+  const { data } = await supabase
+    .from('messages')
+    .select('image_path')
+    .eq('sender_id', userId)
+    .not('image_path', 'is', null)
+    .returns<{ image_path: string }[]>();
+  const paths = (data ?? []).map((row) => row.image_path);
+  if (paths.length) await supabase.storage.from('chat-images').remove(paths);
+}
+
 export function publicImageUrl(path: string) {
   return supabase.storage.from('post-images').getPublicUrl(path).data.publicUrl;
 }

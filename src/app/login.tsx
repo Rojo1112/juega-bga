@@ -110,7 +110,7 @@ export default function LoginScreen() {
             </View>
 
             {mode === 'registrarse' && (
-              <TextField label="Nombre" value={name} onChangeText={setName} autoComplete="name" />
+              <TextField label="Nombre" value={name} onChangeText={setName} autoComplete="name" maxLength={100} />
             )}
             <TextField
               label="Correo"

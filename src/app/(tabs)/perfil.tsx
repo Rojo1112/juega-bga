@@ -5,7 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Avatar, Button, Chip, ChipRow, ErrorText, Loading, Screen, Section, TextField } from '@/components/ui';
 import { LEVELS, SPORTS } from '@/constants/sports';
 import { Spacing } from '@/constants/theme';
-import { removeMyPostImages } from '@/lib/images';
+import { removeMyChatImages, removeMyPostImages } from '@/lib/images';
 import { useSession, useUserId } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import type { Profile, SkillLevel, SportId, UserSport } from '@/lib/types';
@@ -59,12 +59,16 @@ export default function ProfileScreen() {
       .from('profiles')
       .update({ full_name: name.trim(), neighborhood: neighborhood.trim() || null, bio: bio.trim() || null })
       .eq('id', userId);
-    const { error: deleteError } = await supabase.from('user_sports').delete().eq('user_id', userId);
     const rows = Object.entries(levels).map(([sport_id, level]) => ({ user_id: userId, sport_id, level }));
-    const { error: insertError } = rows.length
-      ? await supabase.from('user_sports').insert(rows)
+    const { error: upsertError } = rows.length
+      ? await supabase.from('user_sports').upsert(rows, { onConflict: 'user_id,sport_id' })
       : { error: null };
-    const firstError = profileError ?? deleteError ?? insertError;
+    const selectedSports = Object.keys(levels);
+    const unselected = supabase.from('user_sports').delete().eq('user_id', userId);
+    const { error: deleteError } = selectedSports.length
+      ? await unselected.not('sport_id', 'in', `(${selectedSports.join(',')})`)
+      : await unselected;
+    const firstError = profileError ?? upsertError ?? deleteError;
     if (firstError) setError(firstError.message);
     else setSaved(true);
     setSaving(false);
@@ -74,6 +78,7 @@ export default function ProfileScreen() {
     setDeleting(true);
     setError(null);
     await removeMyPostImages(userId);
+    await removeMyChatImages(userId);
     const { error: deleteError } = await supabase.rpc('delete_my_account');
     if (deleteError) {
       setError(deleteError.message);

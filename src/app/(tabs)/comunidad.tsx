@@ -28,6 +28,18 @@ export default function CommunityScreen() {
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
+  const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from('blocks')
+      .select('blocked_id')
+      .eq('blocker_id', userId)
+      .returns<{ blocked_id: string }[]>()
+      .then(({ data }) => setBlockedIds(new Set((data ?? []).map((row) => row.blocked_id))));
+  }, [userId]);
 
   useEffect(() => {
     let active = true;
@@ -71,7 +83,25 @@ export default function CommunityScreen() {
     setPublishing(false);
   }
 
+  async function removePost(post: PostRow) {
+    setDeleting(true);
+    setError(null);
+    const { error: deleteError } = await supabase.from('posts').delete().eq('id', post.id);
+    if (deleteError) {
+      setError(deleteError.message);
+    } else {
+      setPosts((current) => current?.filter((item) => item.id !== post.id) ?? null);
+      if (post.image_path) {
+        const { error: imageError } = await supabase.storage.from('post-images').remove([post.image_path]);
+        if (imageError) setError(imageError.message);
+      }
+    }
+    setConfirmingId(null);
+    setDeleting(false);
+  }
+
   const selected = sportById(sport);
+  const visiblePosts = (posts ?? []).filter((post) => !blockedIds.has(post.author_id));
 
   return (
     <Screen>
@@ -114,10 +144,10 @@ export default function CommunityScreen() {
 
       {posts === null ? (
         <ActivityIndicator color={theme.primary} />
-      ) : posts.length === 0 ? (
+      ) : visiblePosts.length === 0 ? (
         <EmptyState icon="people-outline" title="Aún no hay publicaciones" message="Sé el primero en escribir." />
       ) : (
-        posts.map((post) => {
+        visiblePosts.map((post) => {
           const name = post.author?.full_name || 'Jugador';
           const postSport = sportById(post.sport_id);
           return (
@@ -136,6 +166,21 @@ export default function CommunityScreen() {
               {post.image_path && (
                 <Image source={{ uri: publicImageUrl(post.image_path) }} style={styles.postImage} contentFit="cover" />
               )}
+              {post.author_id === userId &&
+                (confirmingId === post.id ? (
+                  <>
+                    <ThemedText type="small">¿Eliminar esta publicación? No se puede deshacer.</ThemedText>
+                    <Button title="Sí, eliminar" variant="danger" onPress={() => removePost(post)} loading={deleting} />
+                    <Button
+                      title="Cancelar"
+                      variant="secondary"
+                      onPress={() => setConfirmingId(null)}
+                      disabled={deleting}
+                    />
+                  </>
+                ) : (
+                  <Button title="Eliminar" variant="danger" icon="trash-outline" onPress={() => setConfirmingId(post.id)} />
+                ))}
             </Card>
           );
         })

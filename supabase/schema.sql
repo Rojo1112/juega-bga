@@ -476,6 +476,10 @@ create policy "subir imágenes a mis chats" on storage.objects
     bucket_id = 'chat-images'
     and public.is_conversation_member(((storage.foldername(name))[1])::uuid)
   );
+create policy "borrar mis imágenes de chat" on storage.objects
+  for delete to authenticated using (
+    bucket_id = 'chat-images' and owner = auth.uid()
+  );
 create policy "ver y borrar mis imágenes de publicaciones" on storage.objects
   for select to authenticated using (
     bucket_id = 'post-images' and (storage.foldername(name))[1] = auth.uid()::text

@@ -32,12 +32,22 @@ export default function ChatScreen() {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set());
 
   function addMessage(message: Message) {
     setMessages((current) =>
       current?.some((item) => item.id === message.id) ? current : [...(current ?? []), message],
     );
   }
+
+  useEffect(() => {
+    supabase
+      .from('blocks')
+      .select('blocked_id')
+      .eq('blocker_id', userId)
+      .returns<{ blocked_id: string }[]>()
+      .then(({ data }) => setBlockedIds(new Set((data ?? []).map((row) => row.blocked_id))));
+  }, [userId]);
 
   useEffect(() => {
     (async () => {
@@ -77,6 +87,7 @@ export default function ChatScreen() {
     [conversation],
   );
   const isGroup = Boolean(conversation?.match);
+  const visibleMessages = (messages ?? []).filter((message) => !blockedIds.has(message.sender_id));
 
   async function send(content: { body?: string; image_path?: string }) {
     const { data, error } = await supabase
@@ -136,7 +147,7 @@ export default function ChatScreen() {
 
       {messages === null ? (
         <ActivityIndicator style={styles.flex} color={theme.primary} />
-      ) : messages.length === 0 ? (
+      ) : visibleMessages.length === 0 ? (
         <View style={styles.flex}>
           <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
             Escribe el primer mensaje.
@@ -145,7 +156,7 @@ export default function ChatScreen() {
       ) : (
         <FlatList
           inverted
-          data={[...messages].reverse()}
+          data={[...visibleMessages].reverse()}
           keyExtractor={(message) => message.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
