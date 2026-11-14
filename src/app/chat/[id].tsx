@@ -14,7 +14,7 @@ import {
 
 import { ThemedText } from '@/components/themed-text';
 import { ErrorText } from '@/components/ui';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { CONVERSATION_SELECT, conversationTitle, type ConversationRow } from '@/lib/chats';
 import { formatTime } from '@/lib/format';
@@ -271,6 +271,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.large,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+    fontFamily: Fonts.body,
     fontSize: 16,
   },
   send: {

@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import type { ComponentProps, PropsWithChildren, ReactNode } from 'react';
+import { useState, type ComponentProps, type PropsWithChildren, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -11,13 +11,47 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { initials } from '@/lib/format';
 import { useTheme } from '@/hooks/use-theme';
 
 export type IconName = ComponentProps<typeof Ionicons>['name'];
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+/** Anillo de foco solo para navegación con teclado en web (el clic no lo muestra). */
+function useFocusRing() {
+  const theme = useTheme();
+  const [focused, setFocused] = useState(false);
+  return {
+    ringStyle: focused
+      ? ({ outlineColor: theme.primary, outlineWidth: 2, outlineOffset: 2, outlineStyle: 'solid' } as const)
+      : null,
+    onFocus: (event: { target: unknown }) => {
+      const target = event.target as { matches?: (selector: string) => boolean };
+      setFocused(target.matches?.(':focus-visible') ?? false);
+    },
+    onBlur: () => setFocused(false),
+  };
+}
+
+/** Escala con resorte al presionar. Reanimated respeta "reducir movimiento" del sistema. */
+function usePressScale() {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  return {
+    animatedStyle,
+    onPressIn: () => {
+      scale.set(withSpring(0.97, { damping: 20, stiffness: 320 }));
+    },
+    onPressOut: () => {
+      scale.set(withSpring(1, { damping: 20, stiffness: 320 }));
+    },
+  };
+}
 
 /** Fondo de pantalla con desplazamiento y ancho máximo para web. */
 export function Screen({
@@ -51,42 +85,49 @@ type ButtonProps = {
 
 export function Button({ title, onPress, variant = 'primary', icon, loading, disabled }: ButtonProps) {
   const theme = useTheme();
-  const background =
-    variant === 'primary' ? theme.primary : variant === 'danger' ? 'transparent' : theme.backgroundElement;
+  const press = usePressScale();
+  const focus = useFocusRing();
   const color =
     variant === 'primary' ? theme.onPrimary : variant === 'danger' ? theme.danger : theme.text;
   const inactive = disabled || loading;
 
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       onPress={onPress}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      onFocus={focus.onFocus}
+      onBlur={focus.onBlur}
       disabled={inactive}
-      style={({ pressed }) => [
+      style={[
         styles.button,
-        { backgroundColor: background, opacity: inactive ? 0.5 : pressed ? 0.8 : 1 },
-        variant === 'danger' && { borderColor: theme.danger, borderWidth: 1 },
+        variant === 'primary'
+          ? { backgroundColor: theme.primary, borderColor: theme.primary }
+          : { borderColor: variant === 'danger' ? theme.danger : theme.border },
+        inactive && styles.inactive,
+        focus.ringStyle,
+        press.animatedStyle,
       ]}>
       {loading ? (
         <ActivityIndicator color={color} />
       ) : (
         <>
           {icon && <Ionicons name={icon} size={18} color={color} />}
-          <ThemedText type="smallBold" style={{ color }}>
-            {title}
-          </ThemedText>
+          <ThemedText style={{ color, fontFamily: Fonts.bodyBold }}>{title}</ThemedText>
         </>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
-export function TextField({ label, style, ...props }: TextInputProps & { label?: string }) {
+export function TextField({ label, style, onFocus, onBlur, ...props }: TextInputProps & { label?: string }) {
   const theme = useTheme();
+  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.field}>
       {label && (
-        <ThemedText type="smallBold" themeColor="textSecondary">
+        <ThemedText type="small" themeColor="textSecondary">
           {label}
         </ThemedText>
       )}
@@ -94,30 +135,81 @@ export function TextField({ label, style, ...props }: TextInputProps & { label?:
         placeholderTextColor={theme.textSecondary}
         style={[
           styles.input,
-          { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.border },
+          { color: theme.text, backgroundColor: theme.background, borderColor: focused ? theme.primary : theme.border },
           props.multiline && styles.inputMultiline,
           style,
         ]}
+        onFocus={(event) => {
+          setFocused(true);
+          onFocus?.(event);
+        }}
+        onBlur={(event) => {
+          setFocused(false);
+          onBlur?.(event);
+        }}
         {...props}
       />
     </View>
   );
 }
 
-export function Chip({ label, selected, onPress }: { label: string; selected?: boolean; onPress: () => void }) {
+type ChipProps = {
+  label: string;
+  selected?: boolean;
+  onPress: () => void;
+  /** Color propio (el del deporte) para el borde y el texto cuando está seleccionado. */
+  color?: string;
+};
+
+export function Chip({ label, selected, onPress, color }: ChipProps) {
   const theme = useTheme();
+  const press = usePressScale();
+  const focus = useFocusRing();
+  const accent = color ?? theme.primary;
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       accessibilityState={{ selected }}
       onPress={onPress}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      onFocus={focus.onFocus}
+      onBlur={focus.onBlur}
       style={[
         styles.chip,
         selected
-          ? { backgroundColor: theme.primary, borderColor: theme.primary }
-          : { backgroundColor: theme.background, borderColor: theme.border },
+          ? { backgroundColor: color ? `${color}1F` : theme.primarySoft, borderColor: accent }
+          : { borderColor: theme.border },
+        focus.ringStyle,
+        press.animatedStyle,
       ]}>
-      <ThemedText type="small" style={{ color: selected ? theme.onPrimary : theme.text }}>
+      <ThemedText type="small" style={{ color: selected ? accent : theme.textSecondary }}>
+        {label}
+      </ThemedText>
+    </AnimatedPressable>
+  );
+}
+
+/** Casilla de verificación con etiqueta que puede partirse en varias líneas. */
+export function Checkbox({ label, checked, onPress }: { label: string; checked: boolean; onPress: () => void }) {
+  const theme = useTheme();
+  const focus = useFocusRing();
+  return (
+    <Pressable
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+      onPress={onPress}
+      onFocus={focus.onFocus}
+      onBlur={focus.onBlur}
+      style={[styles.checkboxRow, focus.ringStyle]}>
+      <View
+        style={[
+          styles.checkbox,
+          { borderColor: checked ? theme.primary : theme.border, backgroundColor: checked ? theme.primary : 'transparent' },
+        ]}>
+        {checked && <Ionicons name="checkmark" size={16} color={theme.onPrimary} />}
+      </View>
+      <ThemedText type="small" style={styles.checkboxLabel}>
         {label}
       </ThemedText>
     </Pressable>
@@ -135,24 +227,49 @@ export function ChipRow({ children }: PropsWithChildren) {
 
 export function Card({ children, onPress }: PropsWithChildren<{ onPress?: () => void }>) {
   const theme = useTheme();
-  const style = [styles.card, { backgroundColor: theme.backgroundElement }];
-  if (!onPress) return <View style={style}>{children}</View>;
+  if (!onPress) {
+    return (
+      <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+        {children}
+      </View>
+    );
+  }
+  return <PressableCard onPress={onPress}>{children}</PressableCard>;
+}
+
+function PressableCard({ children, onPress }: PropsWithChildren<{ onPress: () => void }>) {
+  const theme = useTheme();
+  const press = usePressScale();
+  const focus = useFocusRing();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [style, pressed && { opacity: 0.8 }]}>
+    <AnimatedPressable
+      accessibilityRole="button"
+      onPress={onPress}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      onFocus={focus.onFocus}
+      onBlur={focus.onBlur}
+      style={[
+        styles.card,
+        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+        focus.ringStyle,
+        press.animatedStyle,
+      ]}>
       {children}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
 export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
   const theme = useTheme();
+  const fontSize = Math.round(size * 0.32);
   return (
     <View
       style={[
         styles.avatar,
-        { width: size, height: size, borderRadius: size / 2, backgroundColor: theme.primarySoft },
+        { width: size, height: size, borderRadius: size / 2, backgroundColor: theme.backgroundSelected, borderColor: theme.border },
       ]}>
-      <ThemedText type="smallBold" style={{ color: theme.primary, fontSize: size * 0.38 }}>
+      <ThemedText style={{ fontFamily: Fonts.display, fontSize, lineHeight: Math.round(fontSize * 1.4) }}>
         {initials(name)}
       </ThemedText>
     </View>
@@ -163,7 +280,7 @@ export function Section({ title, action, children }: PropsWithChildren<{ title: 
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionTitle}>
+        <ThemedText type="smallBold" themeColor="textSecondary">
           {title}
         </ThemedText>
         {action}
@@ -223,13 +340,17 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   button: {
-    minHeight: 48,
+    minHeight: 52,
     borderRadius: Radius.medium,
+    borderWidth: 1,
     paddingHorizontal: Spacing.three,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
+  },
+  inactive: {
+    opacity: 0.5,
   },
   field: {
     gap: Spacing.one,
@@ -240,6 +361,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+    fontFamily: Fonts.body,
     fontSize: 16,
   },
   inputMultiline: {
@@ -256,12 +378,31 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     paddingVertical: Spacing.half,
   },
+  checkboxRow: {
+    minHeight: 44,
+    flexDirection: 'row',
+    gap: Spacing.two,
+    alignItems: 'flex-start',
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: Radius.small,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxLabel: {
+    flex: 1,
+  },
   card: {
     borderRadius: Radius.large,
+    borderWidth: 1,
     padding: Spacing.three,
     gap: Spacing.two,
   },
   avatar: {
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -272,10 +413,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  sectionTitle: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   empty: {
     alignItems: 'center',

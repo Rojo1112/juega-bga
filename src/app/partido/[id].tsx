@@ -1,13 +1,14 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { openBrowserAsync } from 'expo-web-browser';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
+import { Court, Roster } from '@/components/court';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, Button, Card, EmptyState, ErrorText, Loading, Screen, Section } from '@/components/ui';
 import { EASYCANCHA_URL, levelName, sportById } from '@/constants/sports';
-import { Spacing } from '@/constants/theme';
-import { formatMatchDate, formatPrice } from '@/lib/format';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { formatMatchDay, formatPrice, formatTime } from '@/lib/format';
 import { MATCH_DETAIL_SELECT, placeName, spotsLeft, type MatchDetailRow } from '@/lib/matches';
 import { useUserId } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
@@ -24,6 +25,7 @@ const MY_STATUS_TEXT: Partial<Record<MemberStatus, string>> = {
 export default function MatchScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const userId = useUserId();
+  const { width: windowWidth } = useWindowDimensions();
   const [match, setMatch] = useState<MatchDetailRow | null | undefined>(undefined);
   const [version, setVersion] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
@@ -96,6 +98,9 @@ export default function MatchScreen() {
   const waitlist = members.filter((member) => member.status === 'en_espera');
   const left = spotsLeft(match, members);
   const cancelled = match.status === 'cancelado';
+  // Ancho de la tarjeta menos su relleno y borde: pantalla (con tope), margen de 16 y relleno de 16 por lado.
+  const courtWidth = Math.min(windowWidth, MaxContentWidth) - Spacing.three * 4 - 2;
+  const spots = Math.min(match.players_needed + 1, 16);
   const bookingUrl = match.venue?.easycancha_url ?? EASYCANCHA_URL;
 
   const join = () =>
@@ -120,9 +125,12 @@ export default function MatchScreen() {
       <Stack.Screen options={{ title: sport ? `${sport.emoji} ${sport.name}` : 'Partido' }} />
 
       <Card>
-        <ThemedText type="subtitle" style={styles.date}>
-          {formatMatchDate(match.starts_at)}
+        <Court sport={match.sport_id} animate width={courtWidth} muted={cancelled} />
+        <ThemedText type="figure">{formatTime(new Date(match.starts_at))}</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          {formatMatchDay(match.starts_at)}
         </ThemedText>
+        <Roster sport={match.sport_id} total={spots} filled={Math.min(accepted.length, spots)} />
         <ThemedText>{placeName(match)}</ThemedText>
         {match.venue?.address && (
           <ThemedText type="small" themeColor="textSecondary">
@@ -246,11 +254,6 @@ function PlayerRow({ member, creator }: { member: Member; creator?: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  date: {
-    fontSize: 24,
-    lineHeight: 30,
-    textTransform: 'capitalize',
-  },
   actions: {
     gap: Spacing.two,
   },

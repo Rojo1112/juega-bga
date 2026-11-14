@@ -1,60 +1,42 @@
 import '@/global.css';
 
-import { Platform } from 'react-native';
+import type { SportId } from '@/lib/types';
 
+// Identidad única: cancha de noche bajo reflectores. No hay tema claro.
 export const Colors = {
-  light: {
-    text: '#0B1A12',
-    background: '#FFFFFF',
-    backgroundElement: '#F1F4F2',
-    backgroundSelected: '#DDE5E0',
-    textSecondary: '#5B6660',
-    border: '#D9E0DC',
-    primary: '#15803D',
-    onPrimary: '#FFFFFF',
-    primarySoft: '#DCFCE7',
-    danger: '#B91C1C',
-    bubbleMine: '#15803D',
-    onBubbleMine: '#FFFFFF',
-  },
-  dark: {
-    text: '#F2F5F3',
-    background: '#0B0F0D',
-    backgroundElement: '#18201B',
-    backgroundSelected: '#243029',
-    textSecondary: '#A3B0A8',
-    border: '#2A352E',
-    primary: '#22C55E',
-    onPrimary: '#04210F',
-    primarySoft: '#123222',
-    danger: '#F87171',
-    bubbleMine: '#16A34A',
-    onBubbleMine: '#FFFFFF',
-  },
+  text: '#F4F6FB', // cal de las líneas
+  background: '#070B1A', // noche
+  backgroundElement: '#0F1630', // grada
+  backgroundSelected: '#1A2347',
+  textSecondary: '#8D97BD', // bruma
+  border: '#26305A', // línea
+  primary: '#FFC247', // reflector
+  onPrimary: '#1A1200',
+  primarySoft: '#2A2410',
+  danger: '#FF6B6B',
+  bubbleMine: '#FFC247',
+  onBubbleMine: '#1A1200',
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export type ThemeColor = keyof typeof Colors;
 
-export const Fonts = Platform.select({
-  ios: {
-    sans: 'system-ui',
-    serif: 'ui-serif',
-    rounded: 'ui-rounded',
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
+/** Color de la superficie donde se juega cada deporte. */
+export const SportColors: Record<SportId, string> = {
+  futbol: '#35D07F',
+  padel: '#3E8BFF',
+  pickleball: '#19D3C5',
+  tenis: '#D9F23D',
+  baloncesto: '#FF7A1A',
+  voleibol: '#EBD3A0',
+};
+
+export const Fonts = {
+  display: 'Unbounded_500Medium',
+  displayBold: 'Unbounded_700Bold',
+  body: 'Manrope_500Medium',
+  bodySemi: 'Manrope_600SemiBold',
+  bodyBold: 'Manrope_700Bold',
+} as const;
 
 export const Spacing = {
   half: 2,
@@ -67,9 +49,9 @@ export const Spacing = {
 } as const;
 
 export const Radius = {
-  small: 8,
-  medium: 12,
-  large: 20,
+  small: 6,
+  medium: 10,
+  large: 18,
   pill: 999,
 } as const;
 

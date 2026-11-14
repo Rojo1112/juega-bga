@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Chip, ChipRow, ErrorText, Screen, Section, TextField } from '@/components/ui';
 import { LEVELS, SPORTS, sportById } from '@/constants/sports';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius, SportColors, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useUserId } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
@@ -117,7 +117,8 @@ export default function NewMatchScreen() {
           {SPORTS.map((item) => (
             <Chip
               key={item.id}
-              label={`${item.emoji} ${item.name}`}
+              label={item.name}
+              color={SportColors[item.id]}
               selected={sport === item.id}
               onPress={() => chooseSport(item.id)}
             />

@@ -1,16 +1,32 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
+import { CourtRally } from '@/components/court';
 import { ThemedText } from '@/components/themed-text';
-import { Button, Chip, ErrorText, Screen, TextField } from '@/components/ui';
+import { Button, Checkbox, ErrorText, Screen, TextField } from '@/components/ui';
 import { TERMS_VERSION } from '@/constants/legal';
-import { Spacing } from '@/constants/theme';
+import { Fonts, Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { supabase } from '@/lib/supabase';
 
 type Mode = 'ingresar' | 'registrarse';
 
+const MODES: { id: Mode; label: string }[] = [
+  { id: 'ingresar', label: 'Ingresar' },
+  { id: 'registrarse', label: 'Crear cuenta' },
+];
+const WIDE_BREAKPOINT = 900;
+const FORM_WIDTH = 400;
+
 export default function LoginScreen() {
+  const theme = useTheme();
+  const { width: windowWidth } = useWindowDimensions();
+  const wide = windowWidth >= WIDE_BREAKPOINT;
+  const contentWidth = Math.min(windowWidth - Spacing.three * 2, 1040);
+  const courtWidth = wide
+    ? Math.min(520, contentWidth - Spacing.six - FORM_WIDTH)
+    : Math.min(windowWidth - Spacing.three * 2, 420);
   const [mode, setMode] = useState<Mode>('ingresar');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -57,65 +73,90 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-      <Screen contentStyle={styles.content}>
-        <View style={styles.header}>
-          <ThemedText type="title">JuegaBGA</ThemedText>
-          <ThemedText themeColor="textSecondary">
-            Arma partidos en Bucaramanga: fútbol, pádel, pickleball, tenis, baloncesto y voleibol.
-          </ThemedText>
-        </View>
-
-        <View style={styles.modes}>
-          <Chip label="Ingresar" selected={mode === 'ingresar'} onPress={() => setMode('ingresar')} />
-          <Chip label="Crear cuenta" selected={mode === 'registrarse'} onPress={() => setMode('registrarse')} />
-        </View>
-
-        {mode === 'registrarse' && (
-          <TextField label="Nombre" value={name} onChangeText={setName} autoComplete="name" />
-        )}
-        <TextField
-          label="Correo"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          autoComplete="email"
-          keyboardType="email-address"
-        />
-        <TextField
-          label="Contraseña"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoComplete={mode === 'ingresar' ? 'current-password' : 'new-password'}
-          onSubmitEditing={submit}
-        />
-
-        {mode === 'registrarse' && (
-          <View style={styles.consent}>
-            <Chip label="Soy mayor de 18 años" selected={adult} onPress={() => setAdult(!adult)} />
-            <Chip
-              label="Acepto los términos y autorizo el tratamiento de mis datos"
-              selected={accepted}
-              onPress={() => setAccepted(!accepted)}
-            />
-            <ThemedText type="small" themeColor="textSecondary">
-              Lee los{' '}
-              <Link href="/legal/terminos" style={styles.link}>
-                términos
-              </Link>{' '}
-              y la{' '}
-              <Link href="/legal/privacidad" style={styles.link}>
-                política de datos
-              </Link>
-              .
+      <Screen contentStyle={[styles.content, wide && styles.contentWide]}>
+        <View style={[styles.layout, wide && styles.layoutWide]}>
+          <View style={[styles.header, wide ? { width: courtWidth } : styles.headerStacked]}>
+            <View style={styles.glow}>
+              <CourtRally width={courtWidth} />
+            </View>
+            <ThemedText type="title" style={styles.brand}>JuegaBGA</ThemedText>
+            <ThemedText themeColor="textSecondary">
+              Arma partidos en Bucaramanga: fútbol, pádel, pickleball, tenis, baloncesto y voleibol.
             </ThemedText>
           </View>
-        )}
 
-        <ErrorText message={error} />
-        {notice && <ThemedText type="small">{notice}</ThemedText>}
+          <View style={[styles.form, wide && { width: FORM_WIDTH }]}>
+            <View style={[styles.segmented, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+              {MODES.map((item) => {
+                const selected = mode === item.id;
+                return (
+                  <Pressable
+                    key={item.id}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected }}
+                    onPress={() => setMode(item.id)}
+                    style={[styles.segment, selected && { backgroundColor: theme.backgroundSelected }]}>
+                    <ThemedText
+                      type="small"
+                      style={{
+                        color: selected ? theme.text : theme.textSecondary,
+                        fontFamily: selected ? Fonts.bodySemi : Fonts.body,
+                      }}>
+                      {item.label}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-        <Button title={mode === 'ingresar' ? 'Ingresar' : 'Crear cuenta'} onPress={submit} loading={loading} />
+            {mode === 'registrarse' && (
+              <TextField label="Nombre" value={name} onChangeText={setName} autoComplete="name" />
+            )}
+            <TextField
+              label="Correo"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoComplete="email"
+              keyboardType="email-address"
+            />
+            <TextField
+              label="Contraseña"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoComplete={mode === 'ingresar' ? 'current-password' : 'new-password'}
+              onSubmitEditing={submit}
+            />
+
+            {mode === 'registrarse' && (
+              <View style={styles.consent}>
+                <Checkbox label="Soy mayor de 18 años" checked={adult} onPress={() => setAdult(!adult)} />
+                <Checkbox
+                  label="Acepto los términos y autorizo el tratamiento de mis datos"
+                  checked={accepted}
+                  onPress={() => setAccepted(!accepted)}
+                />
+                <ThemedText type="small" themeColor="textSecondary">
+                  Lee los{' '}
+                  <Link href="/legal/terminos" style={[styles.link, { color: theme.primary }]}>
+                    términos
+                  </Link>{' '}
+                  y la{' '}
+                  <Link href="/legal/privacidad" style={[styles.link, { color: theme.primary }]}>
+                    política de datos
+                  </Link>
+                  .
+                </ThemedText>
+              </View>
+            )}
+
+            <ErrorText message={error} />
+            {notice && <ThemedText type="small">{notice}</ThemedText>}
+
+            <Button title={mode === 'ingresar' ? 'Ingresar' : 'Crear cuenta'} onPress={submit} loading={loading} />
+          </View>
+        </View>
       </Screen>
     </KeyboardAvoidingView>
   );
@@ -137,21 +178,53 @@ const styles = StyleSheet.create({
   },
   content: {
     justifyContent: 'center',
+  },
+  contentWide: {
+    maxWidth: 1040,
+  },
+  layout: {
     gap: Spacing.three,
+  },
+  layoutWide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.six,
   },
   header: {
     gap: Spacing.two,
+  },
+  headerStacked: {
     marginBottom: Spacing.three,
+  },
+  glow: {
+    alignSelf: 'flex-start',
+    borderRadius: 3,
+    boxShadow: '0 0 80px rgba(244,246,251,0.10)',
+  },
+  brand: {
+    marginTop: Spacing.two,
+  },
+  form: {
+    gap: Spacing.three,
+  },
+  segmented: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderRadius: Radius.medium,
+    padding: Spacing.one,
+  },
+  segment: {
+    flex: 1,
+    height: 40,
+    borderRadius: Radius.small,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   consent: {
     gap: Spacing.two,
-    alignItems: 'flex-start',
   },
   link: {
     textDecorationLine: 'underline',
-  },
-  modes: {
-    flexDirection: 'row',
-    gap: Spacing.two,
   },
 });

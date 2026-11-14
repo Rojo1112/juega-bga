@@ -1,9 +1,11 @@
 const locale = 'es-CO';
 
 export function formatMatchDate(iso: string) {
-  const date = new Date(iso);
-  const day = date.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
-  return `${day} · ${formatTime(date)}`;
+  return `${formatMatchDay(iso)} · ${formatTime(new Date(iso))}`;
+}
+
+export function formatMatchDay(iso: string) {
+  return new Date(iso).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 export function formatTime(date: Date) {

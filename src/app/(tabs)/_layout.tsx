@@ -3,6 +3,7 @@ import { Tabs } from 'expo-router/js-tabs';
 import type { ColorValue } from 'react-native';
 
 import type { IconName } from '@/components/ui';
+import { Fonts } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 function icon(name: IconName) {
@@ -19,8 +20,11 @@ export default function TabLayout() {
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textSecondary,
         tabBarStyle: { backgroundColor: theme.background, borderTopColor: theme.border },
+        tabBarLabelStyle: { fontFamily: Fonts.bodySemi },
         headerStyle: { backgroundColor: theme.background },
+        headerShadowVisible: false,
         headerTintColor: theme.text,
+        headerTitleStyle: { fontFamily: Fonts.display, fontSize: 16 },
       }}>
       <Tabs.Screen name="index" options={{ title: 'Partidos', tabBarIcon: icon('football') }} />
       <Tabs.Screen name="comunidad" options={{ title: 'Comunidad', tabBarIcon: icon('people') }} />

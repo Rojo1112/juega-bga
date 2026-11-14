@@ -6,6 +6,7 @@ import { MatchCard } from '@/components/match-card';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Chip, ChipRow, EmptyState, ErrorText, Screen } from '@/components/ui';
 import { SPORTS } from '@/constants/sports';
+import { SportColors } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { MATCH_LIST_SELECT, type MatchListRow } from '@/lib/matches';
 import { supabase } from '@/lib/supabase';
@@ -48,7 +49,8 @@ export default function MatchesScreen() {
         {SPORTS.map((item) => (
           <Chip
             key={item.id}
-            label={`${item.emoji} ${item.name}`}
+            label={item.name}
+            color={SportColors[item.id]}
             selected={sport === item.id}
             onPress={() => setSport(item.id)}
           />
