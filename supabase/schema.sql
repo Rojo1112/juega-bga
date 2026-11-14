@@ -347,10 +347,14 @@ create trigger before_message_insert
 ------------------------------------------------------------
 grant usage on schema public to authenticated;
 grant select on public.sports, public.venues to authenticated;
-grant select, update on public.profiles to authenticated;
+-- Solo se editan los datos visibles del perfil; el registro del consentimiento lo escribe el trigger.
+grant select on public.profiles to authenticated;
+grant update (full_name, avatar_url, bio, neighborhood) on public.profiles to authenticated;
 grant select, insert, update, delete on public.user_sports to authenticated;
 grant select, insert, update on public.matches to authenticated;
-grant select, insert, update, delete on public.match_members to authenticated;
+-- El convocante solo cambia el estado: nunca a quién pertenece la solicitud.
+grant select, insert, delete on public.match_members to authenticated;
+grant update (status) on public.match_members to authenticated;
 grant select on public.conversations, public.conversation_members to authenticated;
 grant select, insert on public.messages to authenticated;
 grant select, insert, delete on public.posts to authenticated;
