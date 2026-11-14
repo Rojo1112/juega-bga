@@ -41,11 +41,10 @@ Ley 1581 de 2012 y Decreto 1074 de 2015 (datos personales), Ley 1273 de 2009 (de
 Apple: eliminación de cuenta dentro de la app, reportar y bloquear usuarios por contenido de usuarios, etiquetas y manifiesto de privacidad. Google Play: sección de seguridad de datos, política de privacidad pública, flujo de eliminación de cuenta, API objetivo vigente. Verificar reglas en la documentación oficial antes de publicar.
 
 ## Estado actual
-Hecho: esquema, pantallas (login, partidos, perfil, comunidad, chats de grupo y directos, reserva EasyCancha), reforzamiento del esquema (límites, buckets, eliminación de cuenta, bloqueo de cupos), guía de proyecto nuevo, plantilla de canchas.
+Hecho: esquema, pantallas (login, partidos, perfil, comunidad, chats de grupo y directos, reserva EasyCancha), reforzamiento del esquema (límites, buckets, eliminación de cuenta, bloqueo de cupos), consentimiento y mayoría de edad obligatorios en el registro (también validados en la BD), reportar y bloquear jugadores, límite de 30 mensajes por minuto, eliminación de cuenta desde Perfil, textos legales en borrador (`src/constants/legal.ts`), versión web verificada con `expo export`, guía de proyecto nuevo y plantilla de canchas. El esquema se probó contra Postgres local.
 Pendiente, por prioridad:
 1. Crear proyecto Supabase propio y ejecutar `supabase/schema.sql`; apuntar `.env.local`.
 2. Cargar canchas verificadas (`supabase/seed_venues.sql`).
 3. Pruebas funcionales con dos cuentas: partido, solicitud, chat de grupo, chat directo, imágenes, comunidad, perfil.
-4. UI de reportar/bloquear usuarios, botón de eliminar cuenta (`delete_my_account`), mayoría de edad y autorización de datos en el registro.
-5. Textos legales (política, términos) y revisión con abogado.
+4. Completar los datos entre corchetes de `src/constants/legal.ts` y revisar los textos con abogado; revisar los reportes (tabla `reports`) y limpiar imágenes de chat huérfanas al eliminar cuentas.
 6. Builds EAS, fichas de tiendas y publicación.

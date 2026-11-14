@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Avatar, Button, Chip, ChipRow, ErrorText, Loading, Screen, Section, TextField } from '@/components/ui';
 import { LEVELS, SPORTS } from '@/constants/sports';
 import { Spacing } from '@/constants/theme';
+import { removeMyPostImages } from '@/lib/images';
 import { useSession, useUserId } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import type { Profile, SkillLevel, SportId, UserSport } from '@/lib/types';
@@ -22,6 +23,8 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -65,6 +68,19 @@ export default function ProfileScreen() {
     if (firstError) setError(firstError.message);
     else setSaved(true);
     setSaving(false);
+  }
+
+  async function deleteAccount() {
+    setDeleting(true);
+    setError(null);
+    await removeMyPostImages(userId);
+    const { error: deleteError } = await supabase.rpc('delete_my_account');
+    if (deleteError) {
+      setError(deleteError.message);
+      setDeleting(false);
+      return;
+    }
+    await supabase.auth.signOut();
   }
 
   if (!loaded) return <Loading />;
@@ -120,6 +136,20 @@ export default function ProfileScreen() {
       <ErrorText message={error} />
       <Button title={saved ? 'Guardado' : 'Guardar perfil'} icon={saved ? 'checkmark' : undefined} onPress={save} loading={saving} />
       <Button title="Cerrar sesión" variant="secondary" icon="log-out-outline" onPress={() => supabase.auth.signOut()} />
+
+      <Section title="Zona de riesgo">
+        {confirmDelete ? (
+          <>
+            <ThemedText type="small">
+              Se borrarán para siempre tu perfil, tus partidos, tus mensajes y tus publicaciones. No se puede deshacer.
+            </ThemedText>
+            <Button title="Sí, eliminar mi cuenta" variant="danger" onPress={deleteAccount} loading={deleting} />
+            <Button title="Cancelar" variant="secondary" onPress={() => setConfirmDelete(false)} disabled={deleting} />
+          </>
+        ) : (
+          <Button title="Eliminar mi cuenta" variant="danger" icon="trash-outline" onPress={() => setConfirmDelete(true)} />
+        )}
+      </Section>
     </Screen>
   );
 }

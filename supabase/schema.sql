@@ -30,6 +30,9 @@ create table public.profiles (
   avatar_url text,
   bio text check (char_length(bio) <= 500),
   neighborhood text check (char_length(neighborhood) <= 100),
+  -- Constancia del consentimiento (Ley 1581 de 2012): cuándo y qué versión aceptó.
+  terms_accepted_at timestamptz,
+  terms_version text,
   created_at timestamptz not null default now()
 );
 
@@ -44,8 +47,17 @@ create table public.user_sports (
 create function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.profiles (id, full_name)
-  values (new.id, coalesce(new.raw_user_meta_data->>'full_name', ''));
+  if coalesce(new.raw_user_meta_data->>'accepted_terms', '') <> 'true'
+     or coalesce(new.raw_user_meta_data->>'is_adult', '') <> 'true' then
+    raise exception 'Debes aceptar los términos y confirmar que eres mayor de 18 años';
+  end if;
+  insert into public.profiles (id, full_name, terms_accepted_at, terms_version)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'full_name', ''),
+    now(),
+    coalesce(new.raw_user_meta_data->>'terms_version', '1')
+  );
   return new;
 end $$;
 
@@ -232,6 +244,13 @@ begin
   if other_user = auth.uid() then
     raise exception 'No puedes abrir un chat contigo mismo';
   end if;
+  if exists (
+    select 1 from blocks
+    where (blocker_id = auth.uid() and blocked_id = other_user)
+       or (blocker_id = other_user and blocked_id = auth.uid())
+  ) then
+    raise exception 'No puedes escribirle a este jugador';
+  end if;
 
   select c.id into conv
   from conversations c
@@ -270,6 +289,59 @@ create table public.posts (
 create index on public.posts (sport_id, created_at desc);
 
 ------------------------------------------------------------
+-- Moderación: bloquear y reportar jugadores (exigido por Apple y Google
+-- para apps con contenido de usuarios).
+------------------------------------------------------------
+create table public.blocks (
+  blocker_id uuid references public.profiles on delete cascade,
+  blocked_id uuid references public.profiles on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (blocker_id, blocked_id),
+  check (blocker_id <> blocked_id)
+);
+
+-- Los reportes solo se leen desde el panel de Supabase (sin política de lectura).
+create table public.reports (
+  id uuid primary key default gen_random_uuid(),
+  reporter_id uuid not null references public.profiles on delete cascade,
+  reported_id uuid not null references public.profiles on delete cascade,
+  reason text not null check (char_length(reason) between 3 and 500),
+  created_at timestamptz not null default now()
+);
+
+-- En chats directos no se escribe a quien bloqueó (o fue bloqueado) y se limita
+-- el ritmo de mensajes: 30 por minuto por persona.
+create function public.check_message_allowed() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  other uuid;
+begin
+  if (select count(*) from messages
+      where sender_id = new.sender_id and created_at > now() - interval '1 minute') >= 30 then
+    raise exception 'Estás enviando mensajes muy rápido. Espera un momento.';
+  end if;
+
+  select cm.user_id into other
+  from conversation_members cm
+  join conversations c on c.id = cm.conversation_id
+  where cm.conversation_id = new.conversation_id and c.match_id is null and cm.user_id <> new.sender_id
+  limit 1;
+
+  if other is not null and exists (
+    select 1 from blocks
+    where (blocker_id = new.sender_id and blocked_id = other)
+       or (blocker_id = other and blocked_id = new.sender_id)
+  ) then
+    raise exception 'No puedes escribirle a este jugador';
+  end if;
+  return new;
+end $$;
+
+create trigger before_message_insert
+  before insert on public.messages
+  for each row execute function public.check_message_allowed();
+
+------------------------------------------------------------
 -- Permisos: los proyectos nuevos de Supabase no dan acceso automático a
 -- las tablas. Solo los usuarios con sesión usan la app; RLS decide qué filas.
 ------------------------------------------------------------
@@ -282,6 +354,8 @@ grant select, insert, update, delete on public.match_members to authenticated;
 grant select on public.conversations, public.conversation_members to authenticated;
 grant select, insert on public.messages to authenticated;
 grant select, insert, delete on public.posts to authenticated;
+grant select, insert, delete on public.blocks to authenticated;
+grant insert on public.reports to authenticated;
 
 revoke execute on function public.start_direct_chat(uuid) from public, anon;
 grant execute on function public.start_direct_chat(uuid) to authenticated;
@@ -303,6 +377,8 @@ alter table public.conversations enable row level security;
 alter table public.conversation_members enable row level security;
 alter table public.messages enable row level security;
 alter table public.posts enable row level security;
+alter table public.blocks enable row level security;
+alter table public.reports enable row level security;
 
 create policy "deportes visibles" on public.sports
   for select to authenticated using (true);
@@ -367,6 +443,16 @@ create policy "publicar" on public.posts
 create policy "borrar mi publicación" on public.posts
   for delete to authenticated using (author_id = auth.uid());
 
+create policy "ver mis bloqueos" on public.blocks
+  for select to authenticated using (blocker_id = auth.uid());
+create policy "bloquear" on public.blocks
+  for insert to authenticated with check (blocker_id = auth.uid());
+create policy "desbloquear" on public.blocks
+  for delete to authenticated using (blocker_id = auth.uid());
+
+create policy "reportar" on public.reports
+  for insert to authenticated with check (reporter_id = auth.uid() and reported_id <> auth.uid());
+
 ------------------------------------------------------------
 -- Imágenes
 --   chat-images (privado): ruta "<conversation_id>/<archivo>"
@@ -385,6 +471,14 @@ create policy "subir imágenes a mis chats" on storage.objects
   for insert to authenticated with check (
     bucket_id = 'chat-images'
     and public.is_conversation_member(((storage.foldername(name))[1])::uuid)
+  );
+create policy "ver y borrar mis imágenes de publicaciones" on storage.objects
+  for select to authenticated using (
+    bucket_id = 'post-images' and (storage.foldername(name))[1] = auth.uid()::text
+  );
+create policy "borrar mis imágenes de publicaciones" on storage.objects
+  for delete to authenticated using (
+    bucket_id = 'post-images' and (storage.foldername(name))[1] = auth.uid()::text
   );
 create policy "subir imágenes de publicaciones" on storage.objects
   for insert to authenticated with check (

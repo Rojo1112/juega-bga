@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Avatar, Button, Card, EmptyState, ErrorText, Loading, Screen, Section } from '@/components/ui';
+import { Avatar, Button, Card, EmptyState, ErrorText, Loading, Screen, Section, TextField } from '@/components/ui';
 import { levelName, sportById } from '@/constants/sports';
 import { Spacing } from '@/constants/theme';
 import { useUserId } from '@/lib/session';
@@ -17,6 +17,10 @@ export default function PlayerScreen() {
   const [sports, setSports] = useState<UserSport[]>([]);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [blocked, setBlocked] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [reason, setReason] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -25,9 +29,16 @@ export default function PlayerScreen() {
         supabase.from('user_sports').select('*').eq('user_id', id).returns<UserSport[]>(),
       ]);
       setProfile(profileResult.data);
+      const blockResult = await supabase
+        .from('blocks')
+        .select('blocked_id')
+        .eq('blocker_id', userId)
+        .eq('blocked_id', id)
+        .maybeSingle();
+      setBlocked(!!blockResult.data);
       setSports(sportsResult.data ?? []);
     })();
-  }, [id]);
+  }, [id, userId]);
 
   async function openChat() {
     setOpening(true);
@@ -36,6 +47,30 @@ export default function PlayerScreen() {
     setOpening(false);
     if (error) setError(error.message);
     else router.push(`/chat/${data as string}`);
+  }
+
+  async function toggleBlock() {
+    setError(null);
+    setNotice(null);
+    const { error: blockError } = blocked
+      ? await supabase.from('blocks').delete().eq('blocker_id', userId).eq('blocked_id', id)
+      : await supabase.from('blocks').insert({ blocker_id: userId, blocked_id: id });
+    if (blockError) setError(blockError.message);
+    else setBlocked(!blocked);
+  }
+
+  async function sendReport() {
+    setError(null);
+    const { error: reportError } = await supabase
+      .from('reports')
+      .insert({ reporter_id: userId, reported_id: id, reason: reason.trim() });
+    if (reportError) {
+      setError(reportError.message.includes('reports_reason_check') ? 'Cuéntanos brevemente el motivo.' : reportError.message);
+      return;
+    }
+    setReporting(false);
+    setReason('');
+    setNotice('Gracias. Revisaremos el reporte.');
   }
 
   if (profile === undefined) return <Loading />;
@@ -86,8 +121,26 @@ export default function PlayerScreen() {
       </Section>
 
       <ErrorText message={error} />
+      {notice && <ThemedText type="small">{notice}</ThemedText>}
       {id !== userId && (
-        <Button title="Enviar mensaje" icon="chatbubble-outline" onPress={openChat} loading={opening} />
+        <>
+          {!blocked && <Button title="Enviar mensaje" icon="chatbubble-outline" onPress={openChat} loading={opening} />}
+          <Button
+            title={blocked ? 'Desbloquear jugador' : 'Bloquear jugador'}
+            variant="secondary"
+            icon="ban-outline"
+            onPress={toggleBlock}
+          />
+          {reporting ? (
+            <>
+              <TextField label="Motivo del reporte" value={reason} onChangeText={setReason} multiline />
+              <Button title="Enviar reporte" variant="danger" onPress={sendReport} />
+              <Button title="Cancelar" variant="secondary" onPress={() => setReporting(false)} />
+            </>
+          ) : (
+            <Button title="Reportar jugador" variant="danger" icon="flag-outline" onPress={() => setReporting(true)} />
+          )}
+        </>
       )}
     </Screen>
   );

@@ -26,6 +26,13 @@ export async function uploadImage(bucket: Bucket, folder: string, asset: ImagePi
   return path;
 }
 
+/** Borra las imágenes de publicaciones de la persona (al eliminar su cuenta). */
+export async function removeMyPostImages(userId: string) {
+  const { data } = await supabase.storage.from('post-images').list(userId);
+  const paths = (data ?? []).map((file) => `${userId}/${file.name}`);
+  if (paths.length) await supabase.storage.from('post-images').remove(paths);
+}
+
 export function publicImageUrl(path: string) {
   return supabase.storage.from('post-images').getPublicUrl(path).data.publicUrl;
 }

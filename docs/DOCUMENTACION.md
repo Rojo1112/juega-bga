@@ -20,7 +20,9 @@ Flujo de un partido: se crea → se genera su chat y el convocante queda aceptad
 - Imágenes de chat: bucket privado con URL firmada de 1 hora; imágenes de publicaciones: bucket público, subida solo a la carpeta propia.
 - Controles de integridad: límites de longitud, cupos con bloqueo de fila, el convocante no puede traspasar el partido.
 - Eliminación de cuenta: `delete_my_account()` borra el usuario y, en cascada, sus datos. Los archivos de Storage requieren limpieza aparte.
-- Riesgos abiertos: sin reportar/bloquear usuarios, cualquiera puede abrir chat directo con cualquiera, sin límite de frecuencia de mensajes, sesión guardada en almacenamiento local (aceptable según Supabase para Expo).
+- Moderación: `blocks` (bloquear impide chats directos y mensajes en ambos sentidos) y `reports` (se leen desde el panel de Supabase). Límite de 30 mensajes por minuto por persona.
+- Consentimiento: el registro exige 18+ y aceptar términos y política; la BD lo valida y guarda fecha y versión.
+- Riesgos abiertos: las imágenes de chat de una cuenta eliminada quedan huérfanas en Storage; los reportes no tienen panel propio; la sesión se guarda en almacenamiento local (aceptable según Supabase para Expo).
 
 ## 3. Desarrollo
 ```bash
@@ -46,3 +48,4 @@ Ver `docs/PROMPT_MAESTRO.md` (marco legal y de tiendas). Pendientes: política d
 2. Esquema inicial, app completa, repositorio privado, proyecto Supabase configurado, colaborador con permiso de escritura.
 3. Revisión y reforzamiento del esquema, plantilla de canchas y guía de proyecto nuevo.
 4. Documentación (este archivo y el prompt maestro).
+5. Cierre funcional: consentimiento y 18+, bloquear y reportar, límite de mensajes, eliminar cuenta, textos legales en borrador y versión web verificada. Esquema probado en Postgres local.
