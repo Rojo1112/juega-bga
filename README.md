@@ -56,3 +56,7 @@ npx expo lint      # revisar estilo
 ```
 
 Para publicar en App Store y Google Play se usa EAS (`npx eas-cli@latest build`), que compila en la nube.
+
+## Licencia
+
+Todos los derechos reservados. Consulta [LICENSE](LICENSE).
