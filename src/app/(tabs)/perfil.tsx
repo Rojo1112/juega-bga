@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -25,6 +26,11 @@ export default function ProfileScreen() {
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    supabase.rpc('is_admin').then(({ data }) => setIsAdmin(data === true));
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -141,6 +147,13 @@ export default function ProfileScreen() {
       <ErrorText message={error} />
       <Button title={saved ? 'Guardado' : 'Guardar perfil'} icon={saved ? 'checkmark' : undefined} onPress={save} loading={saving} />
       <Button title="Cerrar sesión" variant="secondary" icon="log-out-outline" onPress={() => supabase.auth.signOut()} />
+
+      <Section title="Canchas">
+        <Button title="Administrar mis sedes" variant="secondary" icon="storefront-outline" onPress={() => router.push('/sedes')} />
+        {isAdmin && (
+          <Button title="Administración" variant="secondary" icon="shield-checkmark-outline" onPress={() => router.push('/admin')} />
+        )}
+      </Section>
 
       <Section title="Zona de riesgo">
         {confirmDelete ? (

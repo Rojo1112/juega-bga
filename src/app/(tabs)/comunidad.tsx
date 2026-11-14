@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { AdBanner } from '@/components/ad-banner';
 import { ThemedText } from '@/components/themed-text';
 import { Avatar, Button, Card, Chip, ChipRow, EmptyState, ErrorText, Screen, TextField } from '@/components/ui';
 import { SPORTS, sportById } from '@/constants/sports';
@@ -105,6 +106,7 @@ export default function CommunityScreen() {
 
   return (
     <Screen>
+      <AdBanner placement="comunidad" />
       <ChipRow>
         <Chip label="General" selected={!sport} onPress={() => chooseSport(null)} />
         {SPORTS.map((item) => (

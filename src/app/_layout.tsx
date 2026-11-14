@@ -73,6 +73,11 @@ function RootNavigator() {
         <Stack.Screen name="partido/[id]" options={{ title: 'Partido' }} />
         <Stack.Screen name="chat/[id]" options={{ title: 'Chat' }} />
         <Stack.Screen name="jugador/[id]" options={{ title: 'Jugador' }} />
+        <Stack.Screen name="cancha/[id]" options={{ title: 'Reservar cancha' }} />
+        <Stack.Screen name="reservas" options={{ title: 'Mis reservas' }} />
+        <Stack.Screen name="sedes/index" options={{ title: 'Mis sedes' }} />
+        <Stack.Screen name="sedes/[id]" options={{ title: 'Sede' }} />
+        <Stack.Screen name="admin" options={{ title: 'Administración' }} />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="login" options={{ headerShown: false }} />

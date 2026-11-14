@@ -27,6 +27,7 @@ export default function TabLayout() {
         headerTitleStyle: { fontFamily: Fonts.display, fontSize: 16 },
       }}>
       <Tabs.Screen name="index" options={{ title: 'Partidos', tabBarIcon: icon('football') }} />
+      <Tabs.Screen name="canchas" options={{ title: 'Canchas', tabBarIcon: icon('tennisball') }} />
       <Tabs.Screen name="comunidad" options={{ title: 'Comunidad', tabBarIcon: icon('people') }} />
       <Tabs.Screen name="chats" options={{ title: 'Chats', tabBarIcon: icon('chatbubbles') }} />
       <Tabs.Screen name="perfil" options={{ title: 'Perfil', tabBarIcon: icon('person-circle') }} />

@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 
+import { AdBanner } from '@/components/ad-banner';
 import { MatchCard } from '@/components/match-card';
 import { ThemedText } from '@/components/themed-text';
 import { Button, Chip, ChipRow, EmptyState, ErrorText, Screen } from '@/components/ui';
@@ -43,6 +44,7 @@ export default function MatchesScreen() {
 
   return (
     <Screen>
+      <AdBanner placement="inicio" />
       <ThemedText themeColor="textSecondary">Partidos próximos en Bucaramanga</ThemedText>
       <ChipRow>
         <Chip label="Todos" selected={!sport} onPress={() => setSport(null)} />
