@@ -6,7 +6,7 @@ Actualizado: 2026-11-15. Fuente de verdad del trabajo en curso; el mapa está en
 App web y móvil para armar partidos (fútbol, pádel, pickleball, tenis, baloncesto, voleibol) en Bucaramanga, con chats privados y reserva de canchas propia con publicidad propia. Etapa actual: dejar el producto probado de punta a punta y listo para abrir al público.
 
 ## Reglas del responsable
-- "Nada de lo que se suba a GitHub puede mencionar" herramientas de asistencia ni a sus fabricantes; todo figura a nombre del responsable. Nunca se sube `.claude/`.
+- "Nada de lo que se suba a GitHub puede mencionar" herramientas de asistencia ni a sus fabricantes; todo figura a nombre del responsable. Nunca se suben carpetas de configuración de esas herramientas.
 - "Código mínimo: resuelve lo pedido, sin extras, abstracciones ni archivos no solicitados."
 - "Antes de cerrar: lint, typecheck y pruebas. Informa fallos tal cual."
 - Diseño: "no utilices emojis para los diseños, crea diseños propios animados"; "debe poder adaptarse a todas las resoluciones"; "algo detallado, futurista y que se vea caro".
